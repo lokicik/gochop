@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"fmt"
 	"gochop/backend/internal/db"
-	"math/rand"
+	"net/url"
+	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,10 +21,78 @@ const (
 	defaultExpiration = 90 * 24 * time.Hour // 90 days
 )
 
+// getBaseURL returns the base URL for short links from environment or default
+func getBaseURL() string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3001" // Default for development
+	}
+	return baseURL
+}
+
+// validateURL checks if the provided URL is valid
+func validateURL(urlStr string) error {
+	if urlStr == "" {
+		return fmt.Errorf("URL cannot be empty")
+	}
+	
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL format")
+	}
+	
+	if parsedURL.Scheme == "" {
+		return fmt.Errorf("URL must include a scheme (http:// or https://)")
+	}
+	
+	if parsedURL.Host == "" {
+		return fmt.Errorf("URL must include a host")
+	}
+	
+	return nil
+}
+
+// validateAlias checks if the provided alias is valid
+func validateAlias(alias string) error {
+	if alias == "" {
+		return nil // Empty alias is allowed
+	}
+	
+	// Check length
+	if len(alias) < 3 || len(alias) > 50 {
+		return fmt.Errorf("alias must be between 3 and 50 characters")
+	}
+	
+	// Check format (alphanumeric, hyphens, underscores only)
+	validAlias := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	if !validAlias.MatchString(alias) {
+		return fmt.Errorf("alias can only contain letters, numbers, hyphens, and underscores")
+	}
+	
+	// Prevent reserved words
+	reserved := []string{"api", "admin", "www", "app", "help", "support", "about"}
+	for _, word := range reserved {
+		if strings.ToLower(alias) == word {
+			return fmt.Errorf("alias '%s' is reserved", alias)
+		}
+	}
+	
+	return nil
+}
+
+// validateContext checks if the provided context is valid
+func validateContext(context string) error {
+	if len(context) > 200 {
+		return fmt.Errorf("context must be less than 200 characters")
+	}
+	return nil
+}
+
 // ShortenRequest defines the structure for the /api/shorten request body.
 type ShortenRequest struct {
 	LongURL string `json:"long_url"`
 	Alias   string `json:"alias,omitempty"`
+	Context string `json:"context,omitempty"`
 }
 
 // ShortenResponse defines the structure for the /api/shorten response.
@@ -30,16 +101,19 @@ type ShortenResponse struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
-// init seeds the random number generator.
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-// generateShortCode creates a random string of a fixed length.
+// generateShortCode creates a cryptographically secure random string of a fixed length.
 func generateShortCode() string {
 	b := make([]byte, shortCodeLength)
 	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+		// Generate a random byte
+		randomBytes := make([]byte, 1)
+		_, err := rand.Read(randomBytes)
+		if err != nil {
+			// Fallback to time-based generation if crypto/rand fails
+			b[i] = letterBytes[int(time.Now().UnixNano())%len(letterBytes)]
+		} else {
+			b[i] = letterBytes[int(randomBytes[0])%len(letterBytes)]
+		}
 	}
 	return string(b)
 }
@@ -75,6 +149,25 @@ func ShortenLink(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate input
+	if err := validateURL(req.LongURL); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := validateAlias(req.Alias); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := validateContext(req.Context); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	var shortCode string
 	var err error
 
@@ -97,8 +190,8 @@ func ShortenLink(c *fiber.Ctx) error {
 	expiresAt := time.Now().Add(defaultExpiration)
 
 	// Insert into PostgreSQL
-	insertSQL := `INSERT INTO links (short_code, long_url, expires_at) VALUES ($1, $2, $3)`
-	_, err = db.DB.Exec(db.Ctx, insertSQL, shortCode, req.LongURL, expiresAt)
+	insertSQL := `INSERT INTO links (short_code, long_url, context, expires_at) VALUES ($1, $2, $3, $4)`
+	_, err = db.DB.Exec(db.Ctx, insertSQL, shortCode, req.LongURL, req.Context, expiresAt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Could not save link to database.",
@@ -111,7 +204,7 @@ func ShortenLink(c *fiber.Ctx) error {
 		// Log and ignore cache error
 	}
 
-	shortURL := "http://localhost:3001/" + shortCode
+	shortURL := getBaseURL() + "/" + shortCode
 
 	return c.JSON(ShortenResponse{
 		ShortURL:  shortURL,
@@ -122,7 +215,7 @@ func ShortenLink(c *fiber.Ctx) error {
 // GenerateQRCode serves a QR code image for a given short link.
 func GenerateQRCode(c *fiber.Ctx) error {
 	shortCode := c.Params("shortCode")
-	shortURL := "http://localhost:3001/" + shortCode
+	shortURL := getBaseURL() + "/" + shortCode
 	redisKey := "qr:" + shortCode
 
 	// 1. Check if QR code is cached in Redis

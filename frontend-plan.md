@@ -81,7 +81,7 @@ This file outlines the development plan for the GoChop frontend, built with Next
 - [x] Implement a form with:
   - [x] Long URL input
   - [x] Optional alias input
-  - [ ] Optional tags or context input
+  - [x] Optional tags or context input
 - [x] Submit form data to the backend API (`/api/shorten`).
 - [x] Display the result from the API, including:
   - [x] Short URL
@@ -94,13 +94,13 @@ This file outlines the development plan for the GoChop frontend, built with Next
 
 **Goal**: Show list of previously shortened links for a user.
 
-- [ ] Create `/dashboard` page.
-- [ ] Fetch and display a list of URLs.
-- [ ] For each URL, show:
-  - [ ] Clicks
-  - [ ] Creation date
-  - [ ] Expiration date
-- [ ] Add a button to navigate to the analytics page for each link (`/analytics/[id]`).
+- [x] Create `/dashboard` page.
+- [x] Fetch and display a list of URLs.
+- [x] For each URL, show:
+  - [x] Clicks
+  - [x] Creation date
+  - [x] Expiration date
+- [x] Add a button to navigate to the analytics page for each link (`/analytics/[id]`).
 
 ---
 
@@ -108,12 +108,12 @@ This file outlines the development plan for the GoChop frontend, built with Next
 
 **Goal**: Visualize usage data for a specific shortened link.
 
-- [ ] Create dynamic route `/analytics/[id]`.
-- [ ] Use `Recharts` to display charts for:
-  - [ ] Clicks over time
-  - [ ] Referral sources
+- [x] Create dynamic route `/analytics/[id]`.
+- [x] Use `Recharts` to display charts for:
+  - [x] Clicks over time
+  - [x] Referral sources
   - [ ] Geographic data
-- [ ] Display the QR Code for the link.
+- [x] Display the QR Code for the link.
 - [ ] Add options to update link properties (e.g., expiration, access control).
 
 ---

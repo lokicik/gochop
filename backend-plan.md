@@ -37,14 +37,14 @@ This file outlines the development plan for the GoChop backend, built with Go an
 
 ### ✅ Phase 1: Core Shortening API
 
-- [ ] **Endpoint: `POST /api/shorten`**
+- [x] **Endpoint: `POST /api/shorten`**
   - [x] Accept `long_url`, optional `alias` and `context`.
   - [x] Generate a unique short code.
   - [x] Store the mapping in Redis and PostgreSQL.
   - [x] Return the short code, full short URL, and expiration date.
-- [ ] **Endpoint: `GET /{shortCode}`**
+- [x] **Endpoint: `GET /{shortCode}`**
   - [x] Fetch the original URL from Redis (or PostgreSQL as a fallback).
-  - [ ] Log request metadata (IP, referrer, user agent) for analytics.
+  - [x] Log request metadata (IP, referrer, user agent) for analytics.
   - [x] Redirect to the original URL.
 
 ### ✅ Phase 2: QR Code Endpoint
@@ -55,24 +55,27 @@ This file outlines the development plan for the GoChop backend, built with Go an
 
 ### ✅ Phase 3: Analytics Logging
 
-- [ ] Create middleware to intercept requests.
-  - [ ] Log IP address, timestamp, referrer, and device information.
-  - [ ] Write analytics data asynchronously to the database to avoid blocking.
+- [x] Create middleware to intercept requests.
+  - [x] Log IP address, timestamp, referrer, and device information.
+  - [x] Write analytics data asynchronously to the database to avoid blocking.
 - [ ] (Optional) Consider using a message queue like Kafka for high-throughput logging.
 
 ### ✅ Phase 4: Admin APIs
 
-- [ ] **Endpoint: `GET /api/links`**
-  - [ ] Fetch all links for a specific user.
-  - [ ] Include metadata and click count for each link.
-- [ ] **Endpoint: `GET /api/analytics/{shortCode}`**
-  - [ ] Provide aggregated analytics data for the frontend charts.
+- [x] **Endpoint: `GET /api/links`**
+  - [x] Fetch all links for a specific user.
+  - [x] Include metadata and click count for each link.
+- [x] **Endpoint: `GET /api/analytics/{shortCode}`**
+  - [x] Provide aggregated analytics data for the frontend charts.
 
 ### ✅ Phase 5: Access Control + Expiry
 
-- [ ] Implement Time-to-Live (TTL) on Redis keys for automatic link expiration.
-- [ ] (Optional) Add JWT-based middleware for securing endpoints.
-- [ ] (Future) Implement IP whitelisting/blacklisting capabilities.
+- [x] Implement Time-to-Live (TTL) on Redis keys for automatic link expiration.
+- [x] (Optional) Add JWT-based middleware for securing endpoints.
+- [x] (Future) Implement IP whitelisting/blacklisting capabilities.
+- [x] Add input validation for URLs, aliases, and context
+- [x] Fix cryptographic random number generation
+- [x] Make base URL configurable via environment variable
 
 ---
 

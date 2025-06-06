@@ -17,6 +17,7 @@ const formatDate = (dateString: string) => {
 export default function URLForm() {
   const [longUrl, setLongUrl] = useState("");
   const [alias, setAlias] = useState("");
+  const [context, setContext] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [error, setError] = useState("");
@@ -35,7 +36,11 @@ export default function URLForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ long_url: longUrl, alias: alias }),
+        body: JSON.stringify({
+          long_url: longUrl,
+          alias: alias,
+          context: context,
+        }),
       });
 
       const data = await res.json();
@@ -111,6 +116,30 @@ export default function URLForm() {
               disabled={isLoading}
             />
           </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="context"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Tags or Context (Optional)
+          </label>
+          <div className="mt-1">
+            <input
+              id="context"
+              name="context"
+              type="text"
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              className="block w-full px-4 py-3 text-gray-900 bg-gray-100 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="campaign-2024, social-media, newsletter"
+              disabled={isLoading}
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Add tags or context to help organize and track your links
+          </p>
         </div>
 
         <div>

@@ -49,6 +49,7 @@ func CreateLinkTable() error {
 		id SERIAL PRIMARY KEY,
 		short_code VARCHAR(255) UNIQUE NOT NULL,
 		long_url TEXT NOT NULL,
+		context TEXT,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		expires_at TIMESTAMP WITH TIME ZONE
 	);`
@@ -59,5 +60,27 @@ func CreateLinkTable() error {
 	}
 
 	fmt.Println("Links table created or already exists.")
+	return nil
+}
+
+// CreateAnalyticsTable creates the 'analytics' table if it doesn't exist.
+func CreateAnalyticsTable() error {
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS analytics (
+		id SERIAL PRIMARY KEY,
+		short_code VARCHAR(255) NOT NULL,
+		ip_address INET,
+		user_agent TEXT,
+		referrer TEXT,
+		clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (short_code) REFERENCES links(short_code) ON DELETE CASCADE
+	);`
+
+	_, err := DB.Exec(Ctx, createTableSQL)
+	if err != nil {
+		return fmt.Errorf("error creating analytics table: %v", err)
+	}
+
+	fmt.Println("Analytics table created or already exists.")
 	return nil
 } 
