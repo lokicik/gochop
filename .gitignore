@@ -1,0 +1,36 @@
+# General
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Node / Frontend
+frontend/node_modules
+frontend/.next
+frontend/build
+frontend/dist
+frontend/.pnp
+frontend/.pnp.js
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Go / Backend
+# Ignore compiled binaries
+backend/*.exe
+backend/*.exe~
+backend/*.out
+
+# Ignore the .env file containing secrets
+backend/.env
+
+# OS generated files
+ehthumbs.db
+Thumbs.db 
+.cursor/rules/*
+.cursor/rules/

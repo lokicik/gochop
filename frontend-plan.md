@@ -1,0 +1,198 @@
+# 🧑‍💻 Frontend Development Plan: GoChop (Next.js + Cursor IDE)
+
+This file outlines the development plan for the GoChop frontend, built with Next.js and managed in Cursor IDE.
+
+---
+
+## 🧰 Tools & Stack
+
+- **Framework**: [Next.js 14+ (App Router)](https://nextjs.org)
+- **IDE**: Cursor IDE (AI-native, VSCode-compatible)
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui (headless UI built for Tailwind)
+- **Charts (for Analytics)**: [Recharts](https://recharts.org/)
+- **State Management**: React Context or Zustand (lightweight)
+- **API Integration**: Axios or built-in fetch
+- **Auth (Optional MVP scope)**: Clerk or simple token-based auth
+- **QR Code Rendering**: `qrcode.react` or dynamic image URL from backend
+
+---
+
+## 📁 Folder Structure (App Router)
+
+```bash
+/app
+  /shorten
+    page.tsx         # Shorten URL form
+  /analytics
+    [id]/page.tsx    # Analytics view per shortened URL
+  /dashboard
+    page.tsx         # User dashboard (list of shortened URLs)
+  layout.tsx
+  page.tsx           # Landing page
+/components
+  URLForm.tsx
+  URLCard.tsx
+  QRCodeDisplay.tsx
+  AnalyticsChart.tsx
+/lib
+  api.ts             # Central API utility
+  types.ts
+/styles
+  globals.css
+```
+
+---
+
+## 🚦 Milestone-Based Development Plan
+
+### ✅ **Milestone 1: Project Setup**
+
+**Goal**: Get Next.js project running inside Cursor IDE
+
+- [x] Run: `npx create-next-app@latest gochop-frontend --app`
+- [x] Add Tailwind CSS (`npx tailwindcss init -p`)
+- [x] Install dependencies:
+
+  ```bash
+  pnpm add @shadcn/ui tailwind-variants axios recharts qrcode.react
+  ```
+
+- [x] Set up global layout and base styling
+- [x] Commit to Git and initialize GitHub repo
+
+---
+
+### ✅ **Milestone 2: Landing Page (Marketing)**
+
+**Goal**: Simple page with intro, features, and call-to-action
+
+- [x] Hero section with name "GoChop"
+- [x] Features: Context-aware URLs, QR codes, real-time analytics
+- [x] CTA: "Shorten a URL" button ➝ /shorten
+
+---
+
+### ✅ **Milestone 3: Shorten URL Interface**
+
+**Goal**: Form to create shortened URLs
+
+- [x] Create `/shorten` page.
+- [x] Implement a form with:
+  - [x] Long URL input
+  - [x] Optional alias input
+  - [ ] Optional tags or context input
+- [x] Submit form data to the backend API (`/api/shorten`).
+- [x] Display the result from the API, including:
+  - [x] Short URL
+  - [x] Copy button
+  - [x] QR Code preview (using `QRCodeDisplay.tsx` component).
+
+---
+
+### ✅ **Milestone 4: Dashboard View**
+
+**Goal**: Show list of previously shortened links for a user.
+
+- [ ] Create `/dashboard` page.
+- [ ] Fetch and display a list of URLs.
+- [ ] For each URL, show:
+  - [ ] Clicks
+  - [ ] Creation date
+  - [ ] Expiration date
+- [ ] Add a button to navigate to the analytics page for each link (`/analytics/[id]`).
+
+---
+
+### ✅ **Milestone 5: Analytics Page**
+
+**Goal**: Visualize usage data for a specific shortened link.
+
+- [ ] Create dynamic route `/analytics/[id]`.
+- [ ] Use `Recharts` to display charts for:
+  - [ ] Clicks over time
+  - [ ] Referral sources
+  - [ ] Geographic data
+- [ ] Display the QR Code for the link.
+- [ ] Add options to update link properties (e.g., expiration, access control).
+
+---
+
+### ✅ **Milestone 6: Advanced Link Creation**
+
+**Goal**: Enhance the form to support unique features.
+
+- [ ] **Update Shorten URL Form (`/shorten`)**:
+  - [ ] Add a UI to define rules for **Context-Aware Redirects** (e.g., "if user is on mobile, send to X").
+  - [ ] Implement an interface for **A/B Testing** to add multiple destination URLs with traffic weights.
+  - [ ] Add input fields for **Password Protection** and **Max Clicks** (self-destructing links).
+- [ ] Create a password entry modal/page for users accessing protected links.
+
+---
+
+### ✅ **Milestone 7: Enhanced Dashboard & Analytics**
+
+**Goal**: Display and manage advanced link features.
+
+- [ ] **Update Dashboard (`/dashboard`)**:
+  - [ ] Add icons/tags to indicate if a link is context-aware, an A/B test, or password-protected.
+  - [ ] Implement an "Edit" flow to allow users to change a link's destination, which is key for **Dynamic QR Codes**.
+- [ ] **Update Analytics Page (`/analytics/[id]`)**:
+  - [ ] For A/B tests, display a comparison view showing the performance of each destination URL.
+  - [ ] Add filters to the analytics to segment data by context (e.g., view clicks from "Desktop" only).
+
+---
+
+### ✅ **Milestone 8: Polish & Deploy**
+
+**Goal**: Final touch-ups and deployment.
+
+- [ ] Add favicon/logo.
+- [ ] Ensure the application is responsive and works on mobile views.
+- [ ] Set up environment variables for the backend API URL.
+- [ ] Deploy the application to **Vercel**.
+
+---
+
+## 🔗 Frontend <–> Backend Integration
+
+### `.env.local` Example
+
+```env
+NEXT_PUBLIC_API_BASE=https://api.gochop.io
+```
+
+### API Utility (`lib/api.ts`)
+
+```ts
+export const shortenUrl = async (data) => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/shorten`, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.json();
+};
+```
+
+### QR Code Integration
+
+```tsx
+<img src={`${process.env.NEXT_PUBLIC_API_BASE}/api/qrcode/${shortCode}`} />
+```
+
+---
+
+## 🧪 Testing
+
+- [ ] Write component tests using Jest.
+- [ ] Write end-to-end tests using Playwright.
+
+---
+
+## 🪪 Optional Auth Add-On (Post-MVP)
+
+If you want per-user dashboards later:
+
+- [ ] Integrate Clerk or NextAuth.js
+- [ ] Restrict dashboard and analytics to logged-in users
