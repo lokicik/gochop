@@ -29,8 +29,26 @@ export default function RegisterPage() {
     }
 
     // Validate password strength
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      setIsLoading(false);
+      return;
+    }
+
+    // Check password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(formData.password)) {
+      setError(
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please provide a valid email address");
       setIsLoading(false);
       return;
     }
@@ -222,7 +240,7 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleChange}
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Password (min. 6 characters)"
+                  placeholder="Password (min. 8 chars, uppercase, lowercase, number)"
                 />
               </div>
 

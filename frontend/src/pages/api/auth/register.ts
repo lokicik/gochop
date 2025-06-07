@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { rateLimit } from "./rate-limit";
 
 // Create PostgreSQL connection pool
 const pool = new Pool({
@@ -13,6 +14,9 @@ const pool = new Pool({
       : false,
 });
 
+// Rate limiting: 5 requests per 15 minutes
+const rateLimiter = rateLimit({ maxRequests: 5, windowMs: 15 * 60 * 1000 });
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -20,6 +24,11 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
+
+  // Apply rate limiting
+  await new Promise<void>((resolve) => {
+    rateLimiter(req, res, () => resolve());
+  });
 
   const { name, email, password } = req.body;
 
@@ -30,17 +39,46 @@ export default async function handler(
     });
   }
 
-  if (password.length < 6) {
+  // Enhanced password validation
+  if (password.length < 8) {
     return res.status(400).json({
-      message: "Password must be at least 6 characters long",
+      message: "Password must be at least 8 characters long",
     });
   }
+
+  // Check password strength
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+    });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      message: "Please provide a valid email address",
+    });
+  }
+
+  // Validate name length and content
+  if (name.trim().length < 2 || name.trim().length > 100) {
+    return res.status(400).json({
+      message: "Name must be between 2 and 100 characters long",
+    });
+  }
+
+  // Sanitize inputs
+  const sanitizedName = name.trim();
+  const sanitizedEmail = email.toLowerCase().trim();
 
   try {
     // Check if user already exists
     const existingUser = await pool.query(
       "SELECT id FROM users WHERE email = $1",
-      [email.toLowerCase()]
+      [sanitizedEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -58,7 +96,7 @@ export default async function handler(
       `INSERT INTO users (name, email, "emailVerified", image) 
        VALUES ($1, $2, NULL, NULL) 
        RETURNING id, name, email`,
-      [name, email.toLowerCase()]
+      [sanitizedName, sanitizedEmail]
     );
 
     const user = result.rows[0];
@@ -67,7 +105,7 @@ export default async function handler(
     await pool.query(
       `INSERT INTO accounts ("userId", type, provider, "providerAccountId", password)
        VALUES ($1, 'credentials', 'credentials', $2, $3)`,
-      [user.id, email.toLowerCase(), hashedPassword]
+      [user.id, sanitizedEmail, hashedPassword]
     );
 
     // Return success (don't return password or sensitive data)
