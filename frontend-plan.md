@@ -112,13 +112,142 @@ This file outlines the development plan for the GoChop frontend, built with Next
 - [x] Use `Recharts` to display charts for:
   - [x] Clicks over time
   - [x] Referral sources
-  - [ ] Geographic data
+  - [x] Geographic data
 - [x] Display the QR Code for the link.
 - [ ] Add options to update link properties (e.g., expiration, access control).
 
 ---
 
-### ✅ **Milestone 6: Advanced Link Creation**
+### ✅ **Milestone 6: NextAuth.js Authentication System**
+
+**Goal**: Implement secure, production-ready authentication using NextAuth.js with social login support.
+
+- [ ] **NextAuth.js Setup**:
+  - [ ] Install NextAuth.js and required dependencies
+  - [ ] Configure NextAuth.js with PostgreSQL adapter
+  - [ ] Set up database schema for NextAuth.js (users, accounts, sessions)
+  - [ ] Configure environment variables for auth providers
+- [ ] **Authentication Providers**:
+  - [ ] Set up Google OAuth provider for social login
+  - [ ] Set up GitHub OAuth provider for developer-friendly auth
+  - [ ] Configure email/password provider for traditional auth
+  - [ ] Add magic link authentication option
+- [ ] **Frontend Implementation**:
+  - [ ] Create authentication pages (/login, /register)
+  - [ ] Implement NextAuth session provider and hooks
+  - [ ] Create protected route wrapper component
+  - [ ] Add authentication UI components (login/logout buttons)
+  - [ ] Implement user profile management page
+- [ ] **Session Management**:
+  - [ ] Configure session strategy and JWT tokens
+  - [ ] Implement session-aware API calls to Go backend
+  - [ ] Add automatic token refresh handling
+  - [ ] Create middleware for protected routes
+- [ ] **User Experience**:
+  - [ ] Add loading states for authentication
+  - [ ] Implement proper error handling for auth failures
+  - [ ] Create user onboarding flow for new registrations
+  - [ ] Add social login buttons with proper branding
+
+**Technical Implementation Details:**
+
+**NextAuth.js Configuration:**
+
+```typescript
+// pages/api/auth/[...nextauth].ts
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import EmailProvider from "next-auth/providers/email";
+import { PostgresAdapter } from "@next-auth/postgres-adapter";
+
+export default NextAuth({
+  adapter: PostgresAdapter(process.env.DATABASE_URL),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    }),
+    EmailProvider({
+      server: process.env.EMAIL_SERVER,
+      from: process.env.EMAIL_FROM,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.userId = user.id;
+        token.isAdmin = user.isAdmin || false;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.userId = token.userId;
+      session.isAdmin = token.isAdmin;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
+    signUp: "/register",
+    error: "/auth/error",
+  },
+});
+```
+
+**Protected API Calls:**
+
+```typescript
+// lib/api.ts
+import { getSession } from "next-auth/react";
+
+export const authenticatedFetch = async (
+  url: string,
+  options: RequestInit = {}
+) => {
+  const session = await getSession();
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${session?.accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+};
+```
+
+**Environment Variables Needed:**
+
+```env
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# GitHub OAuth
+GITHUB_ID=your-github-client-id
+GITHUB_SECRET=your-github-client-secret
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/gochop
+
+# Email (for magic links)
+EMAIL_SERVER=smtp://username:password@smtp.example.com:587
+EMAIL_FROM=noreply@gochop.io
+```
+
+---
+
+### ✅ **Milestone 7: Advanced Link Creation**
 
 **Goal**: Enhance the form to support unique features.
 
@@ -130,7 +259,7 @@ This file outlines the development plan for the GoChop frontend, built with Next
 
 ---
 
-### ✅ **Milestone 7: Enhanced Dashboard & Analytics**
+### ✅ **Milestone 8: Enhanced Dashboard & Analytics**
 
 **Goal**: Display and manage advanced link features.
 
@@ -143,7 +272,7 @@ This file outlines the development plan for the GoChop frontend, built with Next
 
 ---
 
-### ✅ **Milestone 8: Polish & Deploy**
+### ✅ **Milestone 9: Polish & Deploy**
 
 **Goal**: Final touch-ups and deployment.
 
@@ -190,9 +319,6 @@ export const shortenUrl = async (data) => {
 
 ---
 
-## 🪪 Optional Auth Add-On (Post-MVP)
+## 🪪 Authentication Notes
 
-If you want per-user dashboards later:
-
-- [ ] Integrate Clerk or NextAuth.js
-- [ ] Restrict dashboard and analytics to logged-in users
+The authentication system is now implemented as a core feature (Milestone 6) rather than optional post-MVP. This ensures proper user isolation, security, and scalability from the start.

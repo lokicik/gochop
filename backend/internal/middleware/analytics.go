@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"gochop/backend/internal/db"
+	"gochop/backend/internal/services"
 	"net"
 	"strings"
 
@@ -14,13 +15,16 @@ type AnalyticsData struct {
 	IPAddress string
 	UserAgent string
 	Referrer  string
+	Country   string
+	Region    string
+	City      string
 }
 
 // LogAnalytics logs analytics data asynchronously to avoid blocking the request
 func LogAnalytics(data AnalyticsData) {
 	go func() {
-		insertSQL := `INSERT INTO analytics (short_code, ip_address, user_agent, referrer) VALUES ($1, $2, $3, $4)`
-		_, err := db.DB.Exec(db.Ctx, insertSQL, data.ShortCode, data.IPAddress, data.UserAgent, data.Referrer)
+		insertSQL := `INSERT INTO analytics (short_code, ip_address, user_agent, referrer, country, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+		_, err := db.DB.Exec(db.Ctx, insertSQL, data.ShortCode, data.IPAddress, data.UserAgent, data.Referrer, data.Country, data.Region, data.City)
 		if err != nil {
 			// Log error but don't fail the request
 			// In a production environment, you'd want proper logging here
@@ -67,12 +71,23 @@ func AnalyticsMiddleware() fiber.Handler {
 			return c.Next()
 		}
 
+		// Get geographic data from IP
+		clientIP := GetClientIP(c)
+		geoData, err := services.GetLocationFromIP(clientIP)
+		if err != nil {
+			// Use fallback if geo service fails
+			geoData = services.GetLocationFromIPFallback(clientIP)
+		}
+
 		// Log analytics data
 		LogAnalytics(AnalyticsData{
 			ShortCode: shortCode,
-			IPAddress: GetClientIP(c),
+			IPAddress: clientIP,
 			UserAgent: c.Get("User-Agent"),
 			Referrer:  c.Get("Referer"),
+			Country:   geoData.Country,
+			Region:    geoData.Region,
+			City:      geoData.City,
 		})
 
 		return c.Next()

@@ -26,6 +26,7 @@ interface AnalyticsData {
   clicks_by_date: DailyClickData[];
   top_referrers: ReferrerData[];
   top_user_agents: UserAgentData[];
+  geographic_data: GeographicData[];
 }
 
 interface DailyClickData {
@@ -40,6 +41,13 @@ interface ReferrerData {
 
 interface UserAgentData {
   user_agent: string;
+  clicks: number;
+}
+
+interface GeographicData {
+  country: string;
+  region: string;
+  city: string;
   clicks: number;
 }
 
@@ -63,8 +71,25 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
+
+      // Get admin token for development
+      const tokenResponse = await fetch(
+        "http://localhost:3001/api/auth/dev-token"
+      );
+      if (!tokenResponse.ok) {
+        throw new Error("Failed to get auth token");
+      }
+      const tokenData = await tokenResponse.json();
+
+      // Fetch analytics with authentication
       const response = await fetch(
-        `http://localhost:3001/api/admin/analytics/${shortCode}`
+        `http://localhost:3001/api/admin/analytics/${shortCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData.token}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (!response.ok) {
@@ -175,7 +200,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
               {analytics.total_clicks}
@@ -186,7 +211,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {analytics.clicks_by_date.length}
+              {analytics.clicks_by_date?.length || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Active Days
@@ -194,7 +219,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-              {analytics.top_referrers.length}
+              {analytics.top_referrers?.length || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Referrer Sources
@@ -202,10 +227,18 @@ export default function AnalyticsPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-              {analytics.top_user_agents.length}
+              {analytics.top_user_agents?.length || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               User Agents
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">
+              {analytics.geographic_data?.length || 0}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Locations
             </div>
           </div>
         </div>
@@ -217,9 +250,9 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Clicks Over Time (Last 30 Days)
             </h3>
-            {analytics.clicks_by_date.length > 0 ? (
+            {analytics.clicks_by_date && analytics.clicks_by_date.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={analytics.clicks_by_date.reverse()}>
+                <LineChart data={[...analytics.clicks_by_date].reverse()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
@@ -254,7 +287,7 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Top Referrers
             </h3>
-            {analytics.top_referrers.length > 0 ? (
+            {analytics.top_referrers && analytics.top_referrers.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analytics.top_referrers.slice(0, 5)}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -281,7 +314,8 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Top User Agents
             </h3>
-            {analytics.top_user_agents.length > 0 ? (
+            {analytics.top_user_agents &&
+            analytics.top_user_agents.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -317,6 +351,40 @@ export default function AnalyticsPage() {
             )}
           </div>
 
+          {/* Geographic Data */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Geographic Distribution
+            </h3>
+            {analytics.geographic_data &&
+            analytics.geographic_data.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics.geographic_data.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="country"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelStyle={{ color: "#374151" }}
+                    formatter={(value, name, props) => [
+                      value,
+                      `${props.payload.city}, ${props.payload.region}, ${props.payload.country}`,
+                    ]}
+                  />
+                  <Bar dataKey="clicks" fill="#10B981" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No geographic data available
+              </div>
+            )}
+          </div>
+
           {/* QR Code */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -329,7 +397,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Data Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Referrers Table */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -338,7 +406,7 @@ export default function AnalyticsPage() {
               </h3>
             </div>
             <div className="overflow-y-auto max-h-64">
-              {analytics.top_referrers.length > 0 ? (
+              {analytics.top_referrers && analytics.top_referrers.length > 0 ? (
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -379,7 +447,8 @@ export default function AnalyticsPage() {
               </h3>
             </div>
             <div className="overflow-y-auto max-h-64">
-              {analytics.top_user_agents.length > 0 ? (
+              {analytics.top_user_agents &&
+              analytics.top_user_agents.length > 0 ? (
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -407,6 +476,48 @@ export default function AnalyticsPage() {
               ) : (
                 <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                   No user agent data available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Geographic Data Table */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Geographic Locations
+              </h3>
+            </div>
+            <div className="overflow-y-auto max-h-64">
+              {analytics.geographic_data &&
+              analytics.geographic_data.length > 0 ? (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                        Clicks
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {analytics.geographic_data.map((location, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-100">
+                          {location.city}, {location.region}, {location.country}
+                        </td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-100">
+                          {location.clicks}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+                  No geographic data available
                 </div>
               )}
             </div>

@@ -42,7 +42,23 @@ export default function DashboardPage() {
   const fetchLinks = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost:3001/api/admin/links");
+
+      // Get admin token for development
+      const tokenResponse = await fetch(
+        "http://localhost:3001/api/auth/dev-token"
+      );
+      if (!tokenResponse.ok) {
+        throw new Error("Failed to get auth token");
+      }
+      const tokenData = await tokenResponse.json();
+
+      // Fetch links with authentication
+      const response = await fetch("http://localhost:3001/api/admin/links", {
+        headers: {
+          Authorization: `Bearer ${tokenData.token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch links");

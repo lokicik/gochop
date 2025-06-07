@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -32,12 +33,34 @@ func main() {
 		log.Fatalf("Could not create analytics table: %v", err)
 	}
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		// Increase header size limits to prevent "Request Header Fields Too Large" errors
+		ReadBufferSize:  8192,  // Default is 4096
+		WriteBufferSize: 8192,  // Default is 4096
+		// Allow larger headers for user agents, cookies, etc.
+		ServerHeader: "GoChop",
+		// Enable better error handling
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return c.Status(code).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		},
+	})
 
 	// Configure CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:3000",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
+
+	// Add request logging middleware
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${status} - ${method} ${path} (${latency}) - ${ip} - ${ua}\n",
+		TimeFormat: "15:04:05",
 	}))
 
 	// Add analytics middleware

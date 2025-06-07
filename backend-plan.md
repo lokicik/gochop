@@ -77,11 +77,72 @@ This file outlines the development plan for the GoChop backend, built with Go an
 - [x] Fix cryptographic random number generation
 - [x] Make base URL configurable via environment variable
 
+### ✅ Phase 6: NextAuth.js Integration & User Management
+
+**Goal**: Integrate with NextAuth.js frontend auth system for secure, scalable authentication.
+
+- [ ] **Database Schema (NextAuth Compatible)**:
+  - [ ] Create NextAuth.js compatible users table schema
+  - [ ] Add accounts and sessions tables for NextAuth.js
+  - [ ] Add user_id foreign key to links table
+  - [ ] Add database migration support
+- [ ] **NextAuth Session Validation**:
+  - [ ] Create middleware to validate NextAuth.js JWT tokens
+  - [ ] Extract user ID and admin status from validated tokens
+  - [ ] Add session-based authentication for all protected endpoints
+  - [ ] Remove custom JWT middleware and dev token endpoints
+- [ ] **User Context & Authorization**:
+  - [ ] Update link creation to require authentication and set user_id
+  - [ ] Update GetAllLinks to filter by authenticated user
+  - [ ] Update analytics endpoints to check link ownership
+  - [ ] Add admin-only endpoints for user management
+- [ ] **API Integration**:
+  - [ ] Create user profile endpoint compatible with NextAuth session
+  - [ ] Add CORS configuration for Next.js API routes
+  - [ ] Implement proper error handling for unauthenticated requests
+
+**Technical Implementation Details:**
+
+```go
+// Example middleware for NextAuth JWT validation
+func NextAuthMiddleware() fiber.Handler {
+    return func(c *fiber.Ctx) error {
+        token := extractTokenFromHeader(c)
+        userID, isAdmin, err := validateNextAuthToken(token)
+        if err != nil {
+            return c.Status(401).JSON(fiber.Map{"error": "Invalid session"})
+        }
+        c.Locals("userID", userID)
+        c.Locals("isAdmin", isAdmin)
+        return c.Next()
+    }
+}
+```
+
+**Database Schema Updates:**
+
+```sql
+-- NextAuth.js compatible users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    email_verified TIMESTAMPTZ,
+    image TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    is_admin BOOLEAN DEFAULT FALSE
+);
+
+-- Add user_id to existing links table
+ALTER TABLE links ADD COLUMN user_id UUID REFERENCES users(id);
+```
+
 ---
 
 ## ✨ **Advanced & Unique Features**
 
-### ✅ **Phase 6: Context-Aware Redirects**
+### ✅ **Phase 7: Context-Aware Redirects**
 
 - [ ] **Modify `POST /api/shorten`**:
   - [ ] Allow an array of targets instead of a single `long_url`.
@@ -90,7 +151,7 @@ This file outlines the development plan for the GoChop backend, built with Go an
   - [ ] Evaluate the user's context (User-Agent, IP address, Accept-Language header).
   - [ ] Match the context against the defined rules to determine the correct redirect destination.
 
-### ✅ **Phase 7: A/B Testing**
+### ✅ **Phase 8: A/B Testing**
 
 - [ ] **Modify `POST /api/shorten`**:
   - [ ] Allow multiple target URLs, each with a `weight` for traffic distribution.
@@ -100,7 +161,7 @@ This file outlines the development plan for the GoChop backend, built with Go an
   - [ ] Track clicks and conversions for each variant separately.
   - [ ] Provide comparison data via the `GET /api/analytics/{shortCode}` endpoint.
 
-### ✅ **Phase 8: Enhanced Security & Link Control**
+### ✅ **Phase 9: Enhanced Security & Link Control**
 
 - [ ] **Password Protection**:
   - [ ] Add a `password` field to the shorten request.

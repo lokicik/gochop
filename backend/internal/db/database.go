@@ -72,6 +72,9 @@ func CreateAnalyticsTable() error {
 		ip_address INET,
 		user_agent TEXT,
 		referrer TEXT,
+		country VARCHAR(255),
+		region VARCHAR(255),
+		city VARCHAR(255),
 		clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (short_code) REFERENCES links(short_code) ON DELETE CASCADE
 	);`

@@ -20,11 +20,12 @@ type LinkInfo struct {
 
 // AnalyticsInfo represents analytics data for a specific link
 type AnalyticsInfo struct {
-	ShortCode     string                 `json:"short_code"`
-	TotalClicks   int                    `json:"total_clicks"`
-	ClicksByDate  []DailyClickData       `json:"clicks_by_date"`
-	TopReferrers  []ReferrerData         `json:"top_referrers"`
-	TopUserAgents []UserAgentData        `json:"top_user_agents"`
+	ShortCode       string                 `json:"short_code"`
+	TotalClicks     int                    `json:"total_clicks"`
+	ClicksByDate    []DailyClickData       `json:"clicks_by_date"`
+	TopReferrers    []ReferrerData         `json:"top_referrers"`
+	TopUserAgents   []UserAgentData        `json:"top_user_agents"`
+	GeographicData  []GeographicData       `json:"geographic_data"`
 }
 
 // DailyClickData represents click data for a specific date
@@ -43,6 +44,14 @@ type ReferrerData struct {
 type UserAgentData struct {
 	UserAgent string `json:"user_agent"`
 	Clicks    int    `json:"clicks"`
+}
+
+// GeographicData represents geographic statistics
+type GeographicData struct {
+	Country string `json:"country"`
+	Region  string `json:"region"`
+	City    string `json:"city"`
+	Clicks  int    `json:"clicks"`
 }
 
 // GetAllLinks fetches all links with their click counts
@@ -162,6 +171,30 @@ func GetAnalytics(c *fiber.Ctx) error {
 			err := rows.Scan(&userAgentData.UserAgent, &userAgentData.Clicks)
 			if err == nil {
 				analytics.TopUserAgents = append(analytics.TopUserAgents, userAgentData)
+			}
+		}
+	}
+
+	// Get geographic data
+	geographicQuery := `
+		SELECT COALESCE(country, 'Unknown') as country, 
+			   COALESCE(region, 'Unknown') as region,
+			   COALESCE(city, 'Unknown') as city,
+			   COUNT(*) as clicks
+		FROM analytics 
+		WHERE short_code = $1 AND country IS NOT NULL
+		GROUP BY country, region, city
+		ORDER BY clicks DESC
+		LIMIT 20
+	`
+	rows, err = db.DB.Query(db.Ctx, geographicQuery, shortCode)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var geoData GeographicData
+			err := rows.Scan(&geoData.Country, &geoData.Region, &geoData.City, &geoData.Clicks)
+			if err == nil {
+				analytics.GeographicData = append(analytics.GeographicData, geoData)
 			}
 		}
 	}
