@@ -123,8 +123,8 @@ This file outlines the development plan for the GoChop frontend, built with Next
 **Goal**: Implement secure, production-ready authentication using NextAuth.js with social login support.
 
 - [ ] **NextAuth.js Setup**:
-  - [ ] Install NextAuth.js and required dependencies
-  - [ ] Configure NextAuth.js with PostgreSQL adapter
+  - [x] Install NextAuth.js and required dependencies
+  - [x] Configure NextAuth.js with PostgreSQL adapter
   - [ ] Set up database schema for NextAuth.js (users, accounts, sessions)
   - [ ] Configure environment variables for auth providers
 - [ ] **Authentication Providers**:
