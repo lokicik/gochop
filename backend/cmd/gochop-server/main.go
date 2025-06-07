@@ -97,26 +97,34 @@ func main() {
 	app.Get("/api/qrcode/:shortCode", handlers.GenerateQRCode)
 	app.Get("/:shortCode", handlers.RedirectLink)
 
-	// Authentication routes
-	app.Post("/api/auth/login", handlers.Login)
+	// Authentication routes (for development - can be removed in production)
 	app.Get("/api/auth/dev-token", handlers.GenerateAdminToken) // Remove in production
 
-	// Protected routes (require authentication)
-	protected := app.Group("/api", middleware.JWTMiddleware())
+	// Protected routes (require NextAuth authentication)
+	protected := app.Group("/api", middleware.NextAuthMiddleware())
 	protected.Get("/profile", handlers.GetProfile)
+
+	// User routes (require authentication)
+	user := app.Group("/api/user", middleware.NextAuthMiddleware())
+	user.Get("/links", handlers.GetAllLinks) // Now returns user's own links or all if admin
+	user.Get("/profile", handlers.GetUserProfile) // Full profile with stats
+	user.Put("/profile", handlers.UpdateProfile) // Update profile
+	user.Get("/stats", handlers.GetUserStats) // User statistics
 
 	// Admin routes (require authentication + admin privileges + optional IP filtering)
 	admin := app.Group("/api/admin")
-	admin.Use(middleware.JWTMiddleware())
-	admin.Use(middleware.AdminMiddleware())
+	admin.Use(middleware.NextAuthMiddleware())
+	admin.Use(middleware.AdminOnlyMiddleware())
 	
 	// Apply admin-specific IP filtering if configured
 	if adminIPFilter.Mode != "" {
 		admin.Use(middleware.IPFilterMiddleware(adminIPFilter))
 	}
 	
-	admin.Get("/links", handlers.GetAllLinks)
-	admin.Get("/analytics/:shortCode", handlers.GetAnalytics)
+	admin.Get("/links", handlers.GetAllLinks) // Admin can see all links
+	admin.Get("/analytics/:shortCode", handlers.GetAnalytics) // Admin can see any link analytics
+	admin.Get("/users", handlers.ListUsers) // List all users
+	admin.Get("/users/:id", handlers.GetUserByID) // Get specific user details
 
 	// Start the server
 	log.Fatal(app.Listen(":3001")) // Running on port 3001

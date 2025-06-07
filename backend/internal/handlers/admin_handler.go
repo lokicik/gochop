@@ -16,6 +16,7 @@ type LinkInfo struct {
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 	ClickCount int      `json:"click_count"`
+	UserID    string    `json:"user_id"`
 }
 
 // AnalyticsInfo represents analytics data for a specific link
@@ -54,18 +55,46 @@ type GeographicData struct {
 	Clicks  int    `json:"clicks"`
 }
 
-// GetAllLinks fetches all links with their click counts
+// GetAllLinks fetches all links with their click counts for the authenticated user
 func GetAllLinks(c *fiber.Ctx) error {
-	query := `
-		SELECT l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at, 
-			   COALESCE(COUNT(a.id), 0) as click_count
-		FROM links l
-		LEFT JOIN analytics a ON l.short_code = a.short_code
-		GROUP BY l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at
-		ORDER BY l.created_at DESC
-	`
+	// Get user ID from context (set by NextAuth middleware)
+	userID, ok := c.Locals("userID").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User authentication required",
+		})
+	}
 
-	rows, err := db.DB.Query(db.Ctx, query)
+	// Check if user is admin - if so, return all links, otherwise filter by user
+	isAdmin, _ := c.Locals("isAdmin").(bool)
+	
+	var query string
+	var args []interface{}
+	
+	if isAdmin {
+		query = `
+			SELECT l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at, 
+				   COALESCE(COUNT(a.id), 0) as click_count, l.user_id
+			FROM links l
+			LEFT JOIN analytics a ON l.short_code = a.short_code
+			GROUP BY l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at, l.user_id
+			ORDER BY l.created_at DESC
+		`
+		args = []interface{}{}
+	} else {
+		query = `
+			SELECT l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at, 
+				   COALESCE(COUNT(a.id), 0) as click_count, l.user_id
+			FROM links l
+			LEFT JOIN analytics a ON l.short_code = a.short_code
+			WHERE l.user_id = $1
+			GROUP BY l.id, l.short_code, l.long_url, l.context, l.created_at, l.expires_at, l.user_id
+			ORDER BY l.created_at DESC
+		`
+		args = []interface{}{userID}
+	}
+
+	rows, err := db.DB.Query(db.Ctx, query, args...)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Could not fetch links",
@@ -76,7 +105,7 @@ func GetAllLinks(c *fiber.Ctx) error {
 	var links []LinkInfo
 	for rows.Next() {
 		var link LinkInfo
-		err := rows.Scan(&link.ID, &link.ShortCode, &link.LongURL, &link.Context, &link.CreatedAt, &link.ExpiresAt, &link.ClickCount)
+		err := rows.Scan(&link.ID, &link.ShortCode, &link.LongURL, &link.Context, &link.CreatedAt, &link.ExpiresAt, &link.ClickCount, &link.UserID)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Could not scan link data",
@@ -91,14 +120,38 @@ func GetAllLinks(c *fiber.Ctx) error {
 // GetAnalytics provides comprehensive analytics data for a specific link
 func GetAnalytics(c *fiber.Ctx) error {
 	shortCode := c.Params("shortCode")
+	
+	// Get user ID from context (set by NextAuth middleware)
+	userID, ok := c.Locals("userID").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User authentication required",
+		})
+	}
 
-	// Check if the link exists
+	// Check if user is admin
+	isAdmin, _ := c.Locals("isAdmin").(bool)
+
+	// Check if the link exists and user has access to it
 	var exists bool
-	checkQuery := "SELECT EXISTS(SELECT 1 FROM links WHERE short_code = $1)"
-	err := db.DB.QueryRow(db.Ctx, checkQuery, shortCode).Scan(&exists)
+	var linkUserID string
+	var checkQuery string
+	var args []interface{}
+	
+	if isAdmin {
+		// Admin can view any link
+		checkQuery = "SELECT EXISTS(SELECT 1 FROM links WHERE short_code = $1), COALESCE((SELECT user_id FROM links WHERE short_code = $1), '')"
+		args = []interface{}{shortCode, shortCode}
+	} else {
+		// Regular user can only view their own links
+		checkQuery = "SELECT EXISTS(SELECT 1 FROM links WHERE short_code = $1 AND user_id = $2), COALESCE((SELECT user_id FROM links WHERE short_code = $1), '')"
+		args = []interface{}{shortCode, userID, shortCode}
+	}
+	
+	err := db.DB.QueryRow(db.Ctx, checkQuery, args...).Scan(&exists, &linkUserID)
 	if err != nil || !exists {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Link not found",
+			"error": "Link not found or access denied",
 		})
 	}
 

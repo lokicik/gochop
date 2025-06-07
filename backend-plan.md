@@ -81,25 +81,29 @@ This file outlines the development plan for the GoChop backend, built with Go an
 
 **Goal**: Integrate with NextAuth.js frontend auth system for secure, scalable authentication.
 
-- [ ] **Database Schema (NextAuth Compatible)**:
+- [x] **Database Schema (NextAuth Compatible)**:
   - [x] Create NextAuth.js compatible users table schema
   - [x] Add accounts and sessions tables for NextAuth.js
   - [x] Add user_id foreign key to links table
+  - [x] Add password field to accounts table for credentials auth
+  - [x] Fix database field casing for NextAuth adapter compatibility
   - [ ] Add database migration support
-- [ ] **NextAuth Session Validation**:
-  - [ ] Create middleware to validate NextAuth.js JWT tokens
-  - [ ] Extract user ID and admin status from validated tokens
-  - [ ] Add session-based authentication for all protected endpoints
+- [x] **NextAuth Session Validation**:
+  - [x] Create middleware to validate NextAuth.js JWT tokens
+  - [x] Extract user ID and admin status from validated tokens
+  - [x] Add session-based authentication for all protected endpoints
   - [ ] Remove custom JWT middleware and dev token endpoints
-- [ ] **User Context & Authorization**:
-  - [ ] Update link creation to require authentication and set user_id
-  - [ ] Update GetAllLinks to filter by authenticated user
-  - [ ] Update analytics endpoints to check link ownership
-  - [ ] Add admin-only endpoints for user management
-- [ ] **API Integration**:
-  - [ ] Create user profile endpoint compatible with NextAuth session
-  - [ ] Add CORS configuration for Next.js API routes
-  - [ ] Implement proper error handling for unauthenticated requests
+- [x] **User Context & Authorization**:
+  - [x] Update link creation to require authentication and set user_id
+  - [x] Update GetAllLinks to filter by authenticated user
+  - [x] Update analytics endpoints to check link ownership
+  - [x] Add admin-only endpoints for user management
+- [x] **API Integration**:
+  - [x] Create user profile endpoint compatible with NextAuth session
+  - [x] Add CORS configuration for Next.js API routes
+  - [x] Implement proper error handling for unauthenticated requests
+  - [x] Create credentials verification for email/password auth
+  - [x] Add user registration API endpoint with password hashing
 
 **Technical Implementation Details:**
 

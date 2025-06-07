@@ -122,30 +122,36 @@ This file outlines the development plan for the GoChop frontend, built with Next
 
 **Goal**: Implement secure, production-ready authentication using NextAuth.js with social login support.
 
-- [ ] **NextAuth.js Setup**:
+- [x] **NextAuth.js Setup**:
   - [x] Install NextAuth.js and required dependencies
   - [x] Configure NextAuth.js with PostgreSQL adapter
   - [x] Set up database schema for NextAuth.js (users, accounts, sessions)
   - [x] Configure environment variables for auth providers
-- [ ] **Authentication Providers**:
+- [x] **Authentication Providers**:
   - [x] Set up Google OAuth provider for social login
   - [x] Configure email/password provider for traditional auth
-- [ ] **Frontend Implementation**:
+  - [x] Create credentials verification API endpoint with bcrypt
+  - [x] Add password field to accounts table for credentials auth
+- [x] **Frontend Implementation**:
   - [x] Create authentication pages (/login, /register)
-  - [ ] Implement NextAuth session provider and hooks
-  - [ ] Create protected route wrapper component
-  - [ ] Add authentication UI components (login/logout buttons)
-  - [ ] Implement user profile management page
-- [ ] **Session Management**:
-  - [ ] Configure session strategy and JWT tokens
-  - [ ] Implement session-aware API calls to Go backend
-  - [ ] Add automatic token refresh handling
-  - [ ] Create middleware for protected routes
-- [ ] **User Experience**:
-  - [ ] Add loading states for authentication
-  - [ ] Implement proper error handling for auth failures
-  - [ ] Create user onboarding flow for new registrations
-  - [ ] Add social login buttons with proper branding
+  - [x] Implement NextAuth session provider and hooks
+  - [x] Create protected route wrapper component
+  - [x] Add authentication UI components (login/logout buttons)
+  - [x] Implement user profile management page
+  - [x] Create registration form with email/password signup
+- [x] **Session Management**:
+  - [x] Configure session strategy and JWT tokens
+  - [x] Implement session-aware API calls to Go backend
+  - [x] Add automatic token refresh handling
+  - [x] Create middleware for protected routes
+- [x] **User Experience**:
+  - [x] Add loading states for authentication
+  - [x] Implement proper error handling for auth failures
+  - [x] Create user onboarding flow for new registrations
+  - [x] Add social login buttons with proper branding
+  - [x] Conditional navigation based on authentication status
+  - [x] Enhanced homepage with auth-aware call-to-action
+  - [x] Improved dashboard empty state with engaging CTA
 
 **Technical Implementation Details:**
 

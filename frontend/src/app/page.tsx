@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
@@ -10,13 +15,30 @@ export default function HomePage() {
         <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
           The context-aware, intelligent URL shortener of the future.
         </p>
-        <div className="mt-8">
-          <Link
-            href="/shorten"
-            className="px-8 py-3 text-lg font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-          >
-            Shorten a URL
-          </Link>
+        <div className="mt-8 space-x-4">
+          {status === "authenticated" && session ? (
+            <Link
+              href="/shorten"
+              className="px-8 py-3 text-lg font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+            >
+              Shorten a URL
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="px-8 py-3 text-lg font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+              >
+                Get Started
+              </Link>
+              <Link
+                href="/login"
+                className="px-8 py-3 text-lg font-semibold text-indigo-600 bg-white border border-indigo-600 rounded-md hover:bg-indigo-50 dark:text-indigo-400 dark:bg-gray-800 dark:border-indigo-400 dark:hover:bg-gray-700"
+              >
+                Sign In
+              </Link>
+            </>
+          )}
         </div>
       </div>
       <div className="mt-16 text-center">

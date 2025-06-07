@@ -75,9 +75,7 @@ func GetProfile(c *fiber.Ctx) error {
 
 	isAdmin, ok := c.Locals("isAdmin").(bool)
 	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Invalid admin context",
-		})
+		isAdmin = false // Default to false if not set
 	}
 
 	return c.JSON(fiber.Map{

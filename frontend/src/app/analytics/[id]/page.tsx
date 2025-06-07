@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
       }
       const tokenData = await tokenResponse.json();
 
-      // Fetch analytics with authentication
+      // Fetch analytics with authentication (admin endpoint for now)
       const response = await fetch(
         `http://localhost:3001/api/admin/analytics/${shortCode}`,
         {

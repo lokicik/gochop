@@ -1,16 +1,14 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PgAdapter } from "@auth/pg-adapter";
+import PgAdapter from "@auth/pg-adapter";
 import { Pool } from "pg";
 
 // Create PostgreSQL connection pool
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST || "localhost",
-  port: parseInt(process.env.POSTGRES_PORT || "5432"),
-  user: process.env.POSTGRES_USER || "postgres",
-  password: process.env.POSTGRES_PASSWORD || "password",
-  database: process.env.POSTGRES_DATABASE || "gochop",
+  connectionString:
+    process.env.DATABASE_URL ||
+    `postgres://gochop_user:gochop_password@localhost:5432/gochop`,
   ssl:
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
@@ -93,7 +91,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    async signIn({ user, account, profile }) {
+    async signIn() {
       // Allow sign in
       return true;
     },
