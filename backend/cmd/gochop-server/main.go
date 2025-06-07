@@ -23,6 +23,23 @@ func main() {
 		log.Fatalf("Could not connect to the database: %v", err)
 	}
 
+	// Create NextAuth.js compatible tables
+	if err := db.CreateUsersTable(); err != nil {
+		log.Fatalf("Could not create users table: %v", err)
+	}
+
+	if err := db.CreateAccountsTable(); err != nil {
+		log.Fatalf("Could not create accounts table: %v", err)
+	}
+
+	if err := db.CreateSessionsTable(); err != nil {
+		log.Fatalf("Could not create sessions table: %v", err)
+	}
+
+	if err := db.CreateVerificationTokensTable(); err != nil {
+		log.Fatalf("Could not create verification_tokens table: %v", err)
+	}
+
 	// Create the links table if it doesn't exist
 	if err := db.CreateLinkTable(); err != nil {
 		log.Fatalf("Could not create links table: %v", err)

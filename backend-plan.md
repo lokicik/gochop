@@ -82,9 +82,9 @@ This file outlines the development plan for the GoChop backend, built with Go an
 **Goal**: Integrate with NextAuth.js frontend auth system for secure, scalable authentication.
 
 - [ ] **Database Schema (NextAuth Compatible)**:
-  - [ ] Create NextAuth.js compatible users table schema
-  - [ ] Add accounts and sessions tables for NextAuth.js
-  - [ ] Add user_id foreign key to links table
+  - [x] Create NextAuth.js compatible users table schema
+  - [x] Add accounts and sessions tables for NextAuth.js
+  - [x] Add user_id foreign key to links table
   - [ ] Add database migration support
 - [ ] **NextAuth Session Validation**:
   - [ ] Create middleware to validate NextAuth.js JWT tokens
