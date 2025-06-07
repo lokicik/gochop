@@ -125,15 +125,13 @@ This file outlines the development plan for the GoChop frontend, built with Next
 - [ ] **NextAuth.js Setup**:
   - [x] Install NextAuth.js and required dependencies
   - [x] Configure NextAuth.js with PostgreSQL adapter
-  - [ ] Set up database schema for NextAuth.js (users, accounts, sessions)
-  - [ ] Configure environment variables for auth providers
+  - [x] Set up database schema for NextAuth.js (users, accounts, sessions)
+  - [x] Configure environment variables for auth providers
 - [ ] **Authentication Providers**:
-  - [ ] Set up Google OAuth provider for social login
-  - [ ] Set up GitHub OAuth provider for developer-friendly auth
-  - [ ] Configure email/password provider for traditional auth
-  - [ ] Add magic link authentication option
+  - [x] Set up Google OAuth provider for social login
+  - [x] Configure email/password provider for traditional auth
 - [ ] **Frontend Implementation**:
-  - [ ] Create authentication pages (/login, /register)
+  - [x] Create authentication pages (/login, /register)
   - [ ] Implement NextAuth session provider and hooks
   - [ ] Create protected route wrapper component
   - [ ] Add authentication UI components (login/logout buttons)

@@ -1,7 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
-import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PgAdapter } from "@auth/pg-adapter";
 import { Pool } from "pg";
 
@@ -26,20 +25,47 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-    }),
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: parseInt(process.env.EMAIL_SERVER_PORT || "587"),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      from: process.env.EMAIL_FROM,
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        // TODO: Add password verification logic here
+        // This will be implemented when we create the backend auth endpoints
+        try {
+          const response = await fetch(
+            `${process.env.NEXTAUTH_URL}/api/auth/verify-credentials`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            const user = await response.json();
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              isAdmin: user.isAdmin || false,
+            };
+          }
+        } catch (error) {
+          console.error("Authentication error:", error);
+        }
+
+        return null;
+      },
     }),
   ],
 
@@ -83,9 +109,7 @@ export const authOptions: NextAuthOptions = {
 
   pages: {
     signIn: "/login",
-    signUp: "/register",
     error: "/auth/error",
-    verifyRequest: "/auth/verify-request",
     newUser: "/dashboard", // Redirect new users to dashboard
   },
 
