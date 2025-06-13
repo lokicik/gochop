@@ -23,37 +23,15 @@ func main() {
 		log.Fatalf("Could not connect to the database: %v", err)
 	}
 
-	// Create NextAuth.js compatible tables
-	if err := db.CreateUsersTable(); err != nil {
-		log.Fatalf("Could not create users table: %v", err)
-	}
-
-	if err := db.CreateAccountsTable(); err != nil {
-		log.Fatalf("Could not create accounts table: %v", err)
-	}
-
-	if err := db.CreateSessionsTable(); err != nil {
-		log.Fatalf("Could not create sessions table: %v", err)
-	}
-
-	if err := db.CreateVerificationTokensTable(); err != nil {
-		log.Fatalf("Could not create verification_tokens table: %v", err)
-	}
-
-	// Create the links table if it doesn't exist
-	if err := db.CreateLinkTable(); err != nil {
-		log.Fatalf("Could not create links table: %v", err)
-	}
-
-	// Create the analytics table if it doesn't exist
-	if err := db.CreateAnalyticsTable(); err != nil {
-		log.Fatalf("Could not create analytics table: %v", err)
+	// Apply database migrations (runs only pending migrations)
+	if err := db.RunMigrations(); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
 	}
 
 	app := fiber.New(fiber.Config{
 		// Increase header size limits to prevent "Request Header Fields Too Large" errors
-		ReadBufferSize:  8192,  // Default is 4096
-		WriteBufferSize: 8192,  // Default is 4096
+		ReadBufferSize:  32768, // 32KB - increased for NextAuth JWT tokens
+		WriteBufferSize: 32768, // 32KB - increased for large responses
 		// Allow larger headers for user agents, cookies, etc.
 		ServerHeader: "GoChop",
 		// Enable better error handling
@@ -93,12 +71,10 @@ func main() {
 	}
 
 	// Public routes (no authentication required)
-	app.Post("/api/shorten", handlers.ShortenLink)
 	app.Get("/api/qrcode/:shortCode", handlers.GenerateQRCode)
 	app.Get("/:shortCode", handlers.RedirectLink)
 
-	// Authentication routes (for development - can be removed in production)
-	app.Get("/api/auth/dev-token", handlers.GenerateAdminToken) // Remove in production
+	// Development-only authentication routes have been removed in favor of NextAuth session validation
 
 	// Protected routes (require NextAuth authentication)
 	protected := app.Group("/api", middleware.NextAuthMiddleware())
@@ -106,6 +82,7 @@ func main() {
 
 	// User routes (require authentication)
 	user := app.Group("/api/user", middleware.NextAuthMiddleware())
+	user.Post("/shorten", handlers.ShortenLink) // Create shortened links (authenticated users only)
 	user.Get("/links", handlers.GetAllLinks) // Now returns user's own links or all if admin
 	user.Get("/profile", handlers.GetUserProfile) // Full profile with stats
 	user.Put("/profile", handlers.UpdateProfile) // Update profile

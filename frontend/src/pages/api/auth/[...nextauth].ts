@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import PgAdapter from "@auth/pg-adapter";
 import { Pool } from "pg";
+import jwt from "jsonwebtoken";
 
 // Create PostgreSQL connection pool
 const pool = new Pool({
@@ -68,16 +69,32 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async jwt({ token, user, account }) {
-      // Persist the OAuth access_token and user id to the token right after signin
-      if (account) {
-        token.accessToken = account.access_token;
-      }
+    async jwt({ token, user }) {
+      // Always ensure we have userId and isAdmin in the token
       if (user) {
+        // First time sign in
         token.userId = user.id;
-        // Check if user is admin (this will be set during user creation)
         token.isAdmin = user.isAdmin || false;
       }
+
+      // Always generate a fresh JWT token for the Go backend
+      if (token.userId) {
+        const backendToken = jwt.sign(
+          {
+            sub: token.userId,
+            name: token.name,
+            email: token.email,
+            isAdmin: token.isAdmin || false,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days
+          },
+          process.env.NEXTAUTH_SECRET!,
+          { algorithm: "HS256" }
+        );
+
+        token.accessToken = backendToken;
+      }
+
       return token;
     },
 

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -46,21 +47,8 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserStats = async () => {
       try {
-        // Get auth token for development
-        const tokenResponse = await fetch(
-          "http://localhost:3001/api/auth/dev-token"
-        );
-        if (!tokenResponse.ok) return;
-
-        const tokenData = await tokenResponse.json();
-
-        // Fetch user stats
-        const response = await fetch("http://localhost:3001/api/user/stats", {
-          headers: {
-            Authorization: `Bearer ${tokenData.token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        // Fetch user stats using NextAuth session
+        const response = await api.getUserStats();
 
         if (response.ok) {
           const stats = await response.json();

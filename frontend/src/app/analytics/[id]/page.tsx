@@ -18,6 +18,7 @@ import {
   Cell,
 } from "recharts";
 import QRCodeDisplay from "../../../components/QRCodeDisplay";
+import { api } from "@/lib/api";
 
 // Type definitions matching the backend API response
 interface AnalyticsData {
@@ -72,25 +73,8 @@ export default function AnalyticsPage() {
     try {
       setIsLoading(true);
 
-      // Get admin token for development
-      const tokenResponse = await fetch(
-        "http://localhost:3001/api/auth/dev-token"
-      );
-      if (!tokenResponse.ok) {
-        throw new Error("Failed to get auth token");
-      }
-      const tokenData = await tokenResponse.json();
-
-      // Fetch analytics with authentication (admin endpoint for now)
-      const response = await fetch(
-        `http://localhost:3001/api/admin/analytics/${shortCode}`,
-        {
-          headers: {
-            Authorization: `Bearer ${tokenData.token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Fetch analytics using NextAuth session
+      const response = await api.getAnalytics(shortCode);
 
       if (!response.ok) {
         if (response.status === 404) {

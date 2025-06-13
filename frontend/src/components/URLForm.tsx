@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import QRCodeDisplay from "./QRCodeDisplay";
+import { api } from "@/lib/api";
 
 // A simple utility to format dates
 const formatDate = (dateString: string) => {
@@ -31,16 +32,10 @@ export default function URLForm() {
     setExpiresAt("");
 
     try {
-      const res = await fetch("http://localhost:3001/api/shorten", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          long_url: longUrl,
-          alias: alias,
-          context: context,
-        }),
+      const res = await api.shortenUrl({
+        long_url: longUrl,
+        alias: alias,
+        context: context,
       });
 
       const data = await res.json();

@@ -87,12 +87,12 @@ This file outlines the development plan for the GoChop backend, built with Go an
   - [x] Add user_id foreign key to links table
   - [x] Add password field to accounts table for credentials auth
   - [x] Fix database field casing for NextAuth adapter compatibility
-  - [ ] Add database migration support
+  - [x] Add database migration support
 - [x] **NextAuth Session Validation**:
   - [x] Create middleware to validate NextAuth.js JWT tokens
   - [x] Extract user ID and admin status from validated tokens
   - [x] Add session-based authentication for all protected endpoints
-  - [ ] Remove custom JWT middleware and dev token endpoints
+  - [x] Remove custom JWT middleware and dev token endpoints
 - [x] **User Context & Authorization**:
   - [x] Update link creation to require authentication and set user_id
   - [x] Update GetAllLinks to filter by authenticated user

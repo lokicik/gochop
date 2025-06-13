@@ -189,15 +189,19 @@ func ShortenLink(c *fiber.Ctx) error {
 
 	expiresAt := time.Now().Add(defaultExpiration)
 
-	// Get user ID from context if available (for authenticated users)
-	userID, _ := c.Locals("userID").(string)
-	if userID == "" {
-		userID = "anonymous" // Default for anonymous users
+	// Get user ID from context (authentication is required for this endpoint)
+	userID, ok := c.Locals("userID").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User authentication required",
+		})
 	}
 
-	// Insert into PostgreSQL
+	// Insert into PostgreSQL with user_id (always authenticated)
 	insertSQL := `INSERT INTO links (short_code, long_url, context, expires_at, user_id) VALUES ($1, $2, $3, $4, $5)`
-	_, err = db.DB.Exec(db.Ctx, insertSQL, shortCode, req.LongURL, req.Context, expiresAt, userID)
+	args := []interface{}{shortCode, req.LongURL, req.Context, expiresAt, userID}
+	
+	_, err = db.DB.Exec(db.Ctx, insertSQL, args...)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Could not save link to database.",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { api } from "@/lib/api";
 
 // Type definitions matching the backend API response
 interface LinkInfo {
@@ -57,28 +58,10 @@ export default function DashboardPage() {
 
       // Try to fetch from backend, but gracefully handle failures
       try {
-        // For now, fallback to dev token until NextAuth tokens are working
-        const tokenResponse = await fetch(
-          "http://localhost:3001/api/auth/dev-token"
-        );
-        if (!tokenResponse.ok) {
-          console.log("Backend not available, showing empty state");
-          setLinks([]);
-          return;
-        }
-        const tokenData = await tokenResponse.json();
-
-        // Fetch user's links (or all if admin)
-        const endpoint = session.isAdmin
-          ? "http://localhost:3001/api/admin/links"
-          : "http://localhost:3001/api/user/links";
-
-        const response = await fetch(endpoint, {
-          headers: {
-            Authorization: `Bearer ${tokenData.token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        // Fetch user's links (or all if admin) using NextAuth session
+        const response = session.isAdmin
+          ? await api.getAllLinks()
+          : await api.getUserLinks();
 
         if (!response.ok) {
           console.log("Failed to fetch links, showing empty state");

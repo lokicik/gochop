@@ -92,6 +92,41 @@ func AdminOnlyMiddleware() fiber.Handler {
 	}
 }
 
+// OptionalNextAuthMiddleware extracts user information if a valid token is present,
+// but doesn't require authentication (allows anonymous access)
+func OptionalNextAuthMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Extract token from Authorization header
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			// No auth header - continue as anonymous user
+			return c.Next()
+		}
+
+		// Check for Bearer token format
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			// Invalid format - continue as anonymous user
+			return c.Next()
+		}
+
+		tokenString := parts[1]
+
+		// Try to validate the token
+		userID, isAdmin, err := validateNextAuthToken(tokenString)
+		if err != nil {
+			// Invalid token - continue as anonymous user (don't return error)
+			return c.Next()
+		}
+
+		// Store user information in context if token is valid
+		c.Locals("userID", userID)
+		c.Locals("isAdmin", isAdmin)
+
+		return c.Next()
+	}
+}
+
 // validateNextAuthToken validates a NextAuth.js JWT token
 func validateNextAuthToken(tokenString string) (userID string, isAdmin bool, err error) {
 	// For development, we'll use a simple validation
