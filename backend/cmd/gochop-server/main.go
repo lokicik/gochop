@@ -71,6 +71,7 @@ func main() {
 	}
 
 	// Public routes (no authentication required)
+	app.Get("/api/health", handlers.HealthCheck)
 	app.Get("/api/qrcode/:shortCode", handlers.GenerateQRCode)
 	app.Get("/:shortCode", handlers.RedirectLink)
 

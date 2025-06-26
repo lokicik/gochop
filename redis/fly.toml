@@ -1,0 +1,26 @@
+app = "gochop-redis"
+primary_region = "ord"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[mounts]
+  source = "redis_data"
+  destination = "/data"
+
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+
+[[services]]
+  internal_port = 6379
+  protocol = "tcp"
+  auto_start = true
+  auto_stop = false
+
+  [[services.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    timeout = "5s"
+    type = "tcp" 
